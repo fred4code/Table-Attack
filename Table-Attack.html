@@ -1,0 +1,559 @@
+<!-- 
+This html file Table-Attack.html is licensed under the MIT License.
+See http://opensource.org/licenses/MIT for more information.
+	
+Copyright (c) 2023 fred4code
+-->
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>Table Attack</title>
+
+        <audio id="fireAudio" src="blaster-2-81267.mp3" preload="auto"></audio>
+        <!--
+            blaster-2-81267.mp3 - is taken from here: https://pixabay.com/sound-effects/search/laser/
+            A thanks to the author Pixabay!
+        -->
+
+        <audio id="background-music" src="Enigma-Long-Version-Complete-Version.mp3" preload="auto" loop></audio>
+        <!--
+            Enigma-Long-Version-Complete-Version.mp3 is taken from here: https://www.chosic.com/download-audio/32067/
+            Mention the artist of Enigma-Long-Version-Complete-Version.mp3:
+            Aggressive Computer Gaming | ENIGMA by Alex-Productions | https://onsound.eu/
+            Music promoted by https://www.chosic.com/free-music/all/
+            Creative Commons CC BY 3.0
+            https://creativecommons.org/licenses/by/3.0/
+
+            Note: the playback speed of the music is increased by 50%
+        -->
+        
+        <style type="text/css">
+
+            * {
+                user-select: none;
+                cursor: default;
+            }
+            
+            html {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding:0;
+            }
+            body {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding:0;
+            }
+
+            table {
+                border-spacing: 0;
+                border-collapse: collapse;
+            }
+            td {
+                padding: 0;
+            }
+
+            #game_container{
+                transform: scale(1.5);
+                transform-origin: center;
+            }
+
+        </style>
+
+    </head>
+    <body>
+        
+        <div id="game_container" style="border: 1px solid black; width:fit-content; height:fit-content; overflow: hidden;">
+            <div id="start-game" style="position: relative; width: 300px; height:25px; text-align: center; line-height: 25px;">Start Game</div>
+            <div id="game_scene" style="position: relative; width: 300px; height:300px; border-top: 1px solid black;">
+            </div>
+        </div>
+            <script type="text/javascript">
+
+                function appendToParent(child, parent) {
+                    
+                    var parentElement = (typeof parent === 'string') ? document.getElementById(parent) : parent;
+                    var childElement = (typeof child === 'string') ? document.getElementById(child) : child;
+
+                    if (parentElement && childElement) {
+                        parentElement.appendChild(childElement);
+                    } 
+
+                }
+
+                function StartGame() {
+
+
+                    // Make the 'start-game' element invisible
+                    document.getElementById('start-game').style.visibility = "hidden";
+
+                    // Initialize the background music
+                    var backgroundMusic = document.getElementById('background-music');
+                    backgroundMusic.volume = 0.4; // Set the volume to 40% 
+                    backgroundMusic.playbackRate = 1.5; // Increase the playback speed by 50%
+                    backgroundMusic.play(); // Start playing the background music
+
+                    // Initialize the Game object G
+                    var G = new Object();
+
+                    
+                    // Initialize a keys object within the G (Game) object to track the state of certain keys
+                    G.Keys = {
+                        ArrowLeft: false, // State of the left arrow key
+                        ArrowRight: false, // State of the right arrow key
+                        ArrowUp: false, // State of the up arrow key
+                        ArrowDown: false, // State of the down arrow key
+                        " ": false // State of the spacebar
+                    };
+
+                    // Add a keydown event listener to the document
+                    document.addEventListener('keydown', function (event) {
+                        // If the key pressed is in the G.Keys object, set the corresponding value to true
+                        var key = event.key;
+                        if (key in G.Keys) {
+                            G.Keys[key] = true;
+                        }
+                    });
+
+                    // Add a keyup event listener to the document
+                    document.addEventListener('keyup', function (event) {
+                        // If the key released is in the G.keys object, set the corresponding value to false
+                        var key = event.key;
+                        if (key in G.Keys) {
+                            G.Keys[key] = false;
+                        }
+                    });
+
+                    // Add a method to the Game object G to play the fire sound
+                    G.PlayFireSound = function() {
+                        var fireAudio = document.getElementById('fireAudio');
+                        fireAudio.volume = 0.1; // Set the volume of the fire sound to 30%
+                        fireAudio.currentTime = 0; // Reset the play time of the fire sound
+                        fireAudio.play(); // Play the fire sound
+                    };
+
+
+                    // Defining an IIFE (Immediately Invoked Function Expression) to create and return a TableSprite object
+                    G.TableSprite = (function(){
+
+                        // TableSprite is an object that has numberOfRows, numberOfColumns, and stringOfCharacters properties
+                        var TableSprite = function (numberOfRows, numberOfColumns, stringOfCharacters) {
+                            this.numberOfRows = numberOfRows;
+                            this.numberOfColumns = numberOfColumns;
+                            this.stringOfCharacters = stringOfCharacters;
+                        }
+
+                        // getColor method of the TableSprite object: assigns colors based on the depth value
+                        TableSprite.prototype.getColor = function (pColorIndex) {
+                            var colors = ['#FFFFFF', '#C8C8C8', '#969696', '#646464', '#000000'];
+                            return colors[pColorIndex];
+                        };
+
+                        // The createTable method is a part of the TableSprite class. This method is used to create a table sprite with specified styles and colors.
+                        TableSprite.prototype.createTable = function (pLeft, pTop) {
+
+                            // Creates a new table element and set its styles: border collapsing, font family, positioning, left and top offset.
+                            var table = document.createElement('table');
+                            table.style.borderCollapse = 'collapse';
+                            table.style.fontFamily = 'monospace';
+                            table.style.position = 'absolute';
+                            table.style.left = pLeft + "px";
+                            table.style.top = pTop + "px";
+
+                            // Nested for loop to generate rows and cells for the table based on the number of rows and columns specified for the TableSprite object.
+                            for (var i = 0; i < this.numberOfRows; i++) {
+                                var row = table.insertRow();
+                                for (var j = 0; j < this.numberOfColumns; j++) {
+                                    
+                                    // For each cell, sets styles such as width, height, text and vertical alignment.
+                                    var cell = row.insertCell();
+                                    cell.style.width = '5px';
+                                    cell.style.height = '5px';
+                                    cell.style.textAlign = 'center';
+                                    cell.style.verticalAlign = 'middle';
+
+                                    // Calculates the 'colorIndex' for the cell, this is parsed from the character string of the TableSprite object.
+                                    var colorIndex = parseInt(this.stringOfCharacters[i * this.numberOfColumns + j], 10);
+                                    
+                                    // The background color for the cell is set by passing the colorIndex to the getColor method.
+                                    cell.style.backgroundColor = this.getColor(colorIndex);
+                                }
+                            }
+
+                            // Returns the created table which will serve as the sprite for the game.
+                            return table;
+                        };  
+
+                        // Returns the TableSprite function which can be used to create new TableSprite objects
+                        return TableSprite;
+                    })();
+
+                    // A self-invoking function that creates the Player class and its methods.
+                    G.Player = (function(){
+                        
+                        // The Player constructor: initializes a player with a specific table sprite.
+                        var Player = function(){
+                            // A string representation of the player sprite.
+                            var playerAsString = '1234123412341234';
+                            // Define the number of rows and columns for the sprite.
+                            var numberOfRows = 4;
+                            var numberOfColumns = 4;
+                            // Create a new TableSprite object to represent the player.
+                            var tableSprite = new G.TableSprite(numberOfRows, numberOfColumns, playerAsString);
+                            // Use the createTable method of the TableSprite to create the sprite as a table element.
+                            // Then, position it at coordinates (100, 100) on the game scene.
+                            this.tableElement = tableSprite.createTable(100, 100);
+                            // Append the table element to the parent "game_scene" in the HTML DOM.
+                            appendToParent(this.tableElement, "game_scene");
+                        };
+                        // Returns the Player class after its declaration.
+                        return Player;
+                    })();
+
+                    // Defines the moveLeft method for the Player class
+                    G.Player.prototype.moveLeft = function () {
+                        // Calculates the new left position of the player
+                        var newLeft = parseInt(this.tableElement.style.left, 10) - 20;
+                        // Gets the game scene container from the HTML DOM
+                        var gameContainer = document.getElementById('game_scene');
+                        // Gets the boundary rectangle of the game scene container
+                        var gameContainerRect = gameContainer.getBoundingClientRect();
+
+                        // Sets the left boundary of the game scene container
+                        var containerLeftBoundary = gameContainer.offsetLeft;
+
+                        // Checks if the new left position of the player is within the game scene container's left boundary
+                        if (newLeft + containerLeftBoundary >= containerLeftBoundary) {
+                            // If so, updates the player's left position
+                            this.tableElement.style.left = newLeft + 'px';
+                        }
+                    };
+
+                    // Similar methods for moving right, up and down are defined in the same manner, so no comments here.
+                    G.Player.prototype.moveRight = function () {
+                        var newLeft = parseInt(this.tableElement.style.left, 10) + 20;
+                        var gameContainer = document.getElementById('game_scene');
+                        var gameContainerRect = gameContainer.getBoundingClientRect();
+
+                        var containerRightBoundary = gameContainer.clientWidth - this.tableElement.clientWidth;
+
+                        if (newLeft <= containerRightBoundary) {
+                            this.tableElement.style.left = newLeft + 'px';
+                        }
+                    };
+
+
+                    G.Player.prototype.moveUp = function () {
+                        var newTop = parseInt(this.tableElement.style.top, 10) - 20;
+                        var gameContainer = document.getElementById('game_scene');
+                        var gameContainerRect = gameContainer.getBoundingClientRect();
+
+                        var containerTopBoundary = gameContainer.offsetTop;
+
+                        if (newTop + containerTopBoundary >= containerTopBoundary) {
+                            this.tableElement.style.top = newTop + 'px';
+                        }
+                    };
+
+
+                    G.Player.prototype.moveDown = function () {
+                        var newTop = parseInt(this.tableElement.style.top, 10) + 20;
+                        var gameContainer = document.getElementById('game_scene');
+                        var gameContainerRect = gameContainer.getBoundingClientRect();
+
+                        var containerBottomBoundary = gameContainer.clientHeight - this.tableElement.clientHeight;
+
+                        if (newTop <= containerBottomBoundary) {
+                            this.tableElement.style.top = newTop + 'px';
+                        }
+                    };
+
+                    // Defines the shoot method for the Player class
+                    G.Player.prototype.shoot = function () {
+
+                        // Play the fire sound when the player shoots
+                        G.PlayFireSound();
+
+                        // Calculate the left and top position for the fire, adjusted based on the player's position
+                        var playerLeft = parseInt(this.tableElement.style.left, 10) + 8;
+                        var playerTop = parseInt(this.tableElement.style.top, 10) - 20;
+
+                        // Create a new Fire object with the calculated positions
+                        var fire = new G.Fire(playerLeft, playerTop);
+
+                        // Add the newly created Fire object to the fires array in the Game object
+                        G.fires.push(fire);
+
+                        // Start an interval to move the fire every 100 milliseconds
+                        G.FireMoveInterval = setInterval(function () {
+                            fire.move();
+                        }, 100);
+
+                    };
+
+
+                
+                    // Define a function to update the position of the player and the fire
+                    G.PlayerUpdate= function () {
+                        // If the left arrow key is pressed (as indicated by G.keys), call the player's moveLeft function
+                        if (G.Keys.ArrowLeft) {
+                            player.moveLeft();
+                        }
+                        // If the right arrow key is pressed, call the player's moveRight function
+                        if (G.Keys.ArrowRight) {
+                            player.moveRight();
+                        }
+                        // If the up arrow key is pressed, call the player's moveUp function
+                        if (G.Keys.ArrowUp) {
+                            player.moveUp();
+                        }
+                        // If the down arrow key is pressed, call the player's moveDown function
+                        if (G.Keys.ArrowDown) {
+                            player.moveDown();
+                        }
+                        // If the space bar is pressed, call the player's shoot function
+                        if (G.Keys[" "]) {
+                            player.shoot();
+                        }
+                    };
+
+
+                    // Defining the Fire class within the G (Game) object using an IIFE (Immediately Invoked Function Expression)
+                    G.Fire = (function(){
+                        var Fire = function(aLeft, aTop){
+                            var fireAsString = '1';
+                            var numberOfRows = 1;
+                            var numberOfColumns = 1;
+                            // Creates an instance of TableSprite and uses it to create a table representing the fire
+                            var tableSprite = new G.TableSprite(numberOfRows, numberOfColumns, fireAsString);
+                            // Store the tableElement returned from createTable as a property of the Fire instance
+                            this.tableElement = tableSprite.createTable(aLeft, aTop);
+                            // Append the tableElement to the game_scene
+                            appendToParent(this.tableElement, "game_scene");
+                        };
+                        // The Fire function itself is returned by the IIFE and assigned to G.Fire
+                        return Fire;
+                    })();
+
+                    // The move method of the Fire prototype: Moves the fire upwards and removes it if it moves past the top of the game container
+                    G.Fire.prototype.move = function () {
+                        // Move the fire upwards by adjusting its 'top' CSS property
+                        this.tableElement.style.top = (parseInt(this.tableElement.style.top, 10) - 20) + 'px';
+                        
+                        // Get the bounding rectangle of the game_scene
+                        var gameContainerRect = document.getElementById('game_scene').getBoundingClientRect();
+                        
+                        // Get the bounding rectangle of the fire's table element
+                        var fireRect = this.tableElement.getBoundingClientRect();
+
+                        // Check if the fire has moved past the top of the game container
+                        if (fireRect.top + fireRect.height < gameContainerRect.top) {
+                            // If it has, remove the fire's table element from the DOM
+                            this.tableElement.remove();
+                            
+                            // Also remove this fire instance from the G.fires array
+                            var fireIndex = G.fires.indexOf(this);
+                            if (fireIndex > -1) {
+                                G.fires.splice(fireIndex, 1);
+                            }
+                        }
+                    };
+
+                    // Definition of the Enemy object
+                    G.Enemy = (function(){
+                        var Enemy = function(){
+                            // Define the visual representation of the enemy as a string
+                            var enemyAsString = '1111222233334444';
+                            var numberOfRows = 4;
+                            var numberOfColumns = 4;
+
+                            // Direction property for future use (not used in the current implementation)
+                            this.direction = 1;
+
+                            // Create an instance of TableSprite for this enemy
+                            var tableSprite = new G.TableSprite(numberOfRows, numberOfColumns, enemyAsString);
+
+                            // Get the bounding rectangle of the game scene
+                            var gameContainerRect = document.getElementById('game_scene').getBoundingClientRect();
+
+                            // Generate a random left position within the game scene for the enemy to appear
+                            var randomLeft = Math.floor(Math.random() * (gameContainerRect.width - numberOfRows * 5));
+
+                            // Create the visual representation of the enemy and add it to the game scene
+                            this.tableElement = tableSprite.createTable(randomLeft,0);
+                            appendToParent(this.tableElement, "game_scene");
+                        };
+                        return Enemy;
+                    })();
+
+                    // Move function for the Enemy object
+                    G.Enemy.prototype.move = function () {
+                        // Move the enemy element 10 pixels downward
+                        this.tableElement.style.top = (parseInt(this.tableElement.style.top, 10) + 10) + 'px';
+
+                        // Get the bounding rectangle of the game scene
+                        var gameContainerRect = document.getElementById('game_scene').getBoundingClientRect();
+
+                        // Get the bounding rectangle of the enemy element
+                        var enemyRect = this.tableElement.getBoundingClientRect();
+
+                        // If the enemy element moves out of the bottom boundary of the game scene
+                        if (enemyRect.top > gameContainerRect.bottom) {
+                            // Remove the enemy element from the DOM
+                            this.tableElement.remove();
+
+                            // Find the index of the enemy object in the enemies array
+                            var enemyIndex = G.enemies.indexOf(this);
+
+                            // If the enemy object is found in the enemies array
+                            if (enemyIndex > -1) {
+                                // Remove the enemy object from the enemies array
+                                G.enemies.splice(enemyIndex, 1);
+                            }
+                        }
+                    };
+
+
+                    // Spawn function for the Enemy object
+                    G.EnemySpawn = function () {
+                        // Create a new enemy instance
+                        var enemy = new G.Enemy();
+
+                        // Add the new enemy to the enemies array
+                        G.enemies.push(enemy);
+                    };
+
+                    // Function to move all enemies and check for collision with the player
+                    G.EnemyMove = function () {
+                        // Loop through all enemies in the enemies array
+                        for (var i = 0; i < G.enemies.length; i++) {
+                            // Move the current enemy
+                            G.enemies[i].move();
+
+                            // Get the bounding rectangle of the player element
+                            var playerRect = player.tableElement.getBoundingClientRect();
+
+                            // Get the bounding rectangle of the current enemy element
+                            var enemyRect = G.enemies[i].tableElement.getBoundingClientRect();
+
+                            // Check if the player collides with the current enemy
+                            if (G.Collision(playerRect, enemyRect)) {
+
+                                // Game stop
+                                var backgroundMusic = document.getElementById('background-music');
+                                // Pause the music and set its current time to the start
+                                backgroundMusic.pause();
+                                backgroundMusic.currentTime = 0;
+                                // Clear the intervals for enemy movement, enemy spawning, and fire movement
+                                clearInterval(G.EnemyMoveInterval);
+                                clearInterval(G.EnemySpawnInterval);
+                                clearInterval(G.FireMoveInterval);
+
+                                // If player collides with an enemy, it's game over
+                                alert("Game Over");
+
+                                // Refresh the page
+                                location.reload();
+
+                                // Exit the loop
+                                break;
+                            }
+                        }
+                    };
+
+
+                    // This interval moves all enemies every 50 ms
+                    G.EnemyMoveInterval = setInterval(function () {
+                        G.EnemyMove();
+                    }, 50);
+
+                    // Create a new player instance
+                    var player = new G.Player();
+
+                    // Initialize empty arrays for enemies and fires
+                    G.enemies = [];
+                    G.fires = [];
+
+                    // This interval spawns a new enemy every 1000 ms (or 1 second)
+                    G.EnemySpawnInterval = setInterval(function () {
+                        G.EnemySpawn();
+                    }, 1000);
+
+
+                    // Collision function checks if two rectangles intersect
+                    G.Collision = function (rect1, rect2) {
+                        return (
+                            parseInt(rect1.left, 10) < parseInt(rect2.left, 10) + rect2.width &&
+                            parseInt(rect1.left, 10) + rect1.width > parseInt(rect2.left, 10) &&
+                            parseInt(rect1.top, 10) < parseInt(rect2.top, 10) + rect2.height &&
+                            parseInt(rect1.top, 10) + rect1.height > parseInt(rect2.top, 10)
+                        );
+                    };
+
+                    // Function to check for collisions between every fire and enemy on the screen.
+                    G.CheckCollisionsBetweenFireAndEnemy = function () {
+                        // Iterate through each fire in the game.
+                        for (var i = 0; i < G.fires.length; i++) {
+                            var fire = G.fires[i];
+                            // Get the fire's position and dimensions.
+                            var fireRect = fire.tableElement.getBoundingClientRect();
+                            
+                            // For each fire, check it against each enemy.
+                            for (var j = 0; j < G.enemies.length; j++) {
+                                var enemy = G.enemies[j];
+                                // Get the enemy's position and dimensions.
+                                var enemyRect = enemy.tableElement.getBoundingClientRect();
+                                
+                                // Check if the fire's position overlaps with the enemy's position.
+                                if (fireRect.x < enemyRect.x + enemyRect.width &&
+                                    fireRect.x + fireRect.width > enemyRect.x &&
+                                    fireRect.y < enemyRect.y + enemyRect.height &&
+                                    fireRect.y + fireRect.height > enemyRect.y) {
+
+                                    // Remove the fire from the DOM.
+                                    fire.tableElement.remove();
+
+                                    // Remove the enemy from the DOM.
+                                    enemy.tableElement.remove();
+
+                                    // Remove the fire from the fires array.
+                                    G.fires.splice(i, 1);
+
+                                    // Remove the enemy from the enemies array.
+                                    G.enemies.splice(j, 1);
+
+                                    // Since one fire and one enemy have been destroyed, we can break out of the loop
+                                    break;
+                                }
+                            }
+                        }
+                    };
+
+                    // This interval runs the game loop every 100 ms
+                    G.GameLoopInterval = setInterval(function () {
+
+                        // Checks for any collisions between fires and enemies
+                        G.CheckCollisionsBetweenFireAndEnemy();
+                        
+                        // Update player movements and its shooting
+                        G.PlayerUpdate();           
+                    }, 100);
+
+                }
+
+                    
+                // Adds a click event listener to the HTML element with the id 'start-game'. 
+                // When the element is clicked, the 'startGame' function is executed.
+                document.getElementById('start-game').addEventListener('click', StartGame);
+
+
+            </script>
+    </body>
+</html>
